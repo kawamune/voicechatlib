@@ -10,6 +10,7 @@ import org.jitsi.service.neomedia.BasicVolumeControl;
 import org.jitsi.service.neomedia.MediaStream;
 
 import jp.kawamune.minecraft.mod.voicechatlib.phone.VoiceChatEndpoint;
+import jp.kawamune.minecraft.mod.voicechatlib.phone.VoiceChatPeer;
 
 public class TestMain implements Runnable {
 
@@ -79,15 +80,10 @@ public class TestMain implements Runnable {
 		VoiceChatEndpoint endpoint = new VoiceChatEndpoint("192.168.1.15", 9000);
 		chooseDevices(endpoint);
 
-		endpoint.createNewStream("192.168.1.41", 10000);
-
-//		AudioMediaStream stream = (AudioMediaStream)endpoint.getMediaStream();
-//		BasicVolumeControl volumeControl = new BasicVolumeControl("hoge");
-//		stream.setOutputVolumeControl(volumeControl);
-		BasicVolumeControl volumeControl = (BasicVolumeControl)endpoint.getVolumeControl();
+		VoiceChatPeer peer = endpoint.createNewPeer("peer", "192.168.1.41", 10000);
 
 		while (true) {
-			setVolume(volumeControl);
+			setVolume(peer);
 		}
 	}
 
@@ -96,34 +92,33 @@ public class TestMain implements Runnable {
 		VoiceChatEndpoint endpoint = new VoiceChatEndpoint("192.168.1.41", 10000);
 		chooseDevices(endpoint);
 
-		endpoint.createNewStream("192.168.1.42", 9000);
-
-		BasicVolumeControl volumeControl = (BasicVolumeControl)endpoint.getVolumeControl();
+		VoiceChatPeer peer = endpoint.createNewPeer("peer", "192.168.1.15", 9000);
 
 		while (true) {
-			setVolume(volumeControl);
+			setVolume(peer);
 		}
 	}
 
-	protected void setVolume(BasicVolumeControl volumeControl) {
+	protected void setVolume(VoiceChatPeer peer) {
 		
 		try {
-			float volume = volumeControl.getVolume();
-			String volumeString = readCommand("set volume ["
-					+ volumeControl.getMinValue()
-					+ " ... " + volumeControl.getMaxValue()
-					+ "] (current volume is "
-					+ volume
-					+ ")");
-			volume = Float.parseFloat(volumeString);
-			volumeControl.setVolume(volume);
+			String muted = peer.isMuted() ? "muted" : "note muted";
+			String volumeString = readCommand("set volume or mute/unmute"
+					+ "(current volume is "
+					+ peer.getVolume()
+					+ "("
+					+ muted
+					+ "))");
 			
-			volumeControl.setMute(!volumeControl.getMute());
-			if (volumeControl.getMute()) {
-				System.out.println("muted");
+			if (volumeString.equalsIgnoreCase("mute")) {
+				peer.mute();
+			}
+			else if (volumeString.equals("unmute")) {
+				peer.unmute();
 			}
 			else {
-				System.out.println("not muted");
+				float volume = Float.parseFloat(volumeString);
+				peer.setVolume(volume);
 			}
 		}
 		catch (Exception ex) {

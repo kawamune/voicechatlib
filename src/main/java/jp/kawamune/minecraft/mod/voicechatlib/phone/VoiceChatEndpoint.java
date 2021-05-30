@@ -46,21 +46,8 @@ public class VoiceChatEndpoint {
 	protected AudioSystem audioSystem = null;
 	protected DeviceConfiguration deviceConfiguration = null;
 
-	protected Map<String, MediaStream> streams = null;
-	protected VolumeControl volumeControl;
+	protected Map<String, VoiceChatPeer> peers = null;
 
-	public VolumeControl getVolumeControl() {
-
-		return volumeControl;
-	}
-	
-	public MediaStream getMediaStream() {
-		for (MediaStream stream : streams.values()) {
-			return stream;
-		}
-		return null;
-	}
-	
 	public VoiceChatEndpoint(String localHostName) {
 		this(localHostName, -1);
 	}
@@ -74,7 +61,7 @@ public class VoiceChatEndpoint {
 		else {
 			this.localRtpPort = localRtpPort;
 		}
-		streams = new HashMap<String, MediaStream>();
+		peers = new HashMap<String, VoiceChatPeer>();
 		initialize();
 	}
 
@@ -140,7 +127,7 @@ public class VoiceChatEndpoint {
 	 */
 	public boolean setCaptureDevice(String captureDeviceName) {
 
-		if (!streams.isEmpty()) {
+		if (!peers.isEmpty()) {
 			// TODO: Allow changing capture device even after one or more streams are started.
 			throw new UnsupportedOperationException("Can't change the capture device after any streams has been started.");
 		}
@@ -161,9 +148,9 @@ public class VoiceChatEndpoint {
 	 * @param remoteRtpPort RTP port number of the peer. RTCP port will be decided automatically by incrementing this.
 	 * @return If it succeeded or not.
 	 */
-	public boolean createNewStream(String remoteHost, int remoteRtpPort) {
+	public VoiceChatPeer createNewPeer(String remoteHost, int remoteRtpPort) {
 
-		return createNewStream(remoteHost, remoteHost, remoteRtpPort);
+		return createNewPeer(remoteHost, remoteHost, remoteRtpPort);
 	}
 	
 	/**
@@ -173,7 +160,7 @@ public class VoiceChatEndpoint {
 	 * @param remoteRtpPort RTP port number of the peer. RTCP port will be decided automatically by incrementing this.
 	 * @return If it succeeded or not.
 	 */
-	public boolean createNewStream(String peerId, String remoteHostName, int remoteRtpPort) {
+	public VoiceChatPeer createNewPeer(String peerId, String remoteHostName, int remoteRtpPort) {
 
 		try {
 			MediaStream mediaStream = null;
@@ -198,7 +185,7 @@ public class VoiceChatEndpoint {
 			MediaFormat format = mediaService.getFormatFactory().createMediaFormat("PCMU", 8000);
 			if (format == null) {
 				System.err.println("Couldn't create a format");
-				return false;
+				return null;
 			}
 			mediaStream.setFormat(format);
 			
@@ -207,21 +194,23 @@ public class VoiceChatEndpoint {
 			InetSocketAddress remoteRtpAddress = new InetSocketAddress(remoteHost, remoteRtpPort);
 			InetSocketAddress remoteRtcpAddress = new InetSocketAddress(remoteHost, remoteRtpPort + 1);
 			mediaStream.setTarget(new MediaStreamTarget(remoteRtpAddress, remoteRtcpAddress));
+
+			// Create VoiceChatPeer
+			VoiceChatPeer peer = new VoiceChatPeer((AudioMediaStream)mediaStream);
 			
-			volumeControl = new BasicVolumeControl("hoge");
-			((AudioMediaStream)mediaStream).setOutputVolumeControl(volumeControl);
+			peer.start();
+			peers.put(peerId, peer);
 			
-			Thread.sleep(4000);
-			mediaStream.start();
-			streams.put(peerId, mediaStream);
-			Thread.sleep(4000);
-			
-			return true;
+			return peer;
 		}
 		catch (Exception ex) {
 			ex.printStackTrace();
-			return false;
+			return null;
 		}
 	}
 
+	public VoiceChatPeer getPeer(String peerId) {
+
+		return peers.get(peerId);
+	}
 }
