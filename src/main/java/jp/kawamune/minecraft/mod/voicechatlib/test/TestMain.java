@@ -98,9 +98,7 @@ public class TestMain implements Runnable {
 
 		endpoint.createNewStream("192.168.1.42", 9000);
 
-		AudioMediaStream stream = (AudioMediaStream)endpoint.getMediaStream();
-		BasicVolumeControl volumeControl = new BasicVolumeControl("hoge");
-		stream.setOutputVolumeControl(volumeControl);
+		BasicVolumeControl volumeControl = (BasicVolumeControl)endpoint.getVolumeControl();
 
 		while (true) {
 			setVolume(volumeControl);
