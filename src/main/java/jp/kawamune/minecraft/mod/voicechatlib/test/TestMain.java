@@ -116,6 +116,10 @@ public class TestMain implements Runnable {
 			else if (volumeString.equals("unmute")) {
 				peer.unmute();
 			}
+			else if (volumeString.equals("play")) {
+				String filePath = readCommand("put the file path");
+				peer.injectAudioFile("file://" + filePath);
+			}
 			else {
 				float volume = Float.parseFloat(volumeString);
 				peer.setVolume(volume);
