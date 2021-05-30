@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration status="OFF">
+  <appenders>
+    <Console name="console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d %-5p [%t] - %m (%C.java:%L)%n"/>
+    </Console>
+  </appenders>
+
+  <loggers>
+    <Logger name="org.example" level="debug" additivity="false">
+      <appender-ref level="info" ref="console"/>
+    </Logger>
+    <root level="trace">
+      <appender-ref ref="console"/>
+    </root>
+  </loggers>
+</configuration>
